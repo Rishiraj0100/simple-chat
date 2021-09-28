@@ -25,9 +25,9 @@
         $("#send").click(()=>{
             sendMessage({msg: $("#message").val()});
         })
-
+        $("#message").value = ""
         getMessages()
-        eraseText()
+        
     })
 
     socket.on('message', addMessages)
@@ -35,9 +35,7 @@
     function addMessages(message){
         $("#messages").append(`<h4> ${message.username} </h4> <p> ${message.message} </p>`)
     }
-    function eraseText() {
-        $("#message").value = "";
-    }
+    
     function getMessages(){
       $.get('https://beta.intellecttech1.repl.co/api/messages', (data) => {
         data.forEach(addMessages);
