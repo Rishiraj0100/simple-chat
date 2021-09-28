@@ -1,70 +1,49 @@
-var express = require('express');
-var bodyParser = require('body-parser')
-var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var mongoose = require('mongoose');
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat - The intellect</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<div class="container">
+    <br>
+    <div id="messages">
 
-app.use(express.static(__dirname));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}))
+    </div>
+    <div class="jumbotron">
+        <textarea id = "message" class="form-control" placeholder="Your Message Here" rows="1"></textarea>
+        <button id="send" class="btn btn-success">Send</button>
+    </div>
+</div>
+<script>
+   var socket = io();
+    $(() => {
+        $("#send").click(()=>{
+            sendMessage({msg: $("#message").val()});
+        })
 
-var Message = mongoose.model('Message',{
-  name : String,
-  message : String
-})
+        getMessages()
+    })
 
-var dbUrl = 'mongodb://amkurian:amkurian1@ds257981.mlab.com:57981/simple-chat'
+    socket.on('message', addMessages)
 
-app.get('/messages', (req, res) => {
-  Message.find({},(err, messages)=> {
-    res.send(messages);
-  })
-})
+    function addMessages(message){
+        $("#messages").append(`<h4> ${message.username} </h4> <p> ${message.message} </p>`)
+    }
 
+    function getMessages(){
+      $.get('https://beta.intellecttech1.repl.co/api/messages', (data) => {
+        data.forEach(addMessages);
+      })
+    }
 
-app.get('/messages/:user', (req, res) => {
-  var user = req.params.user
-  Message.find({name: user},(err, messages)=> {
-    res.send(messages);
-  })
-})
-
-
-app.post('/messages', async (req, res) => {
-  try{
-    var message = new Message(req.body);
-
-    var savedMessage = await message.save()
-      console.log('saved');
-
-    var censored = await Message.findOne({message:'badword'});
-      if(censored)
-        await Message.remove({_id: censored.id})
-      else
-        io.emit('message', req.body);
-      res.sendStatus(200);
-  }
-  catch (error){
-    res.sendStatus(500);
-    return console.log('error',error);
-  }
-  finally{
-    console.log('Message Posted')
-  }
-
-})
-
-
-
-io.on('connection', () =>{
-  console.log('a user is connected')
-})
-
-mongoose.connect(dbUrl ,{useMongoClient : true} ,(err) => {
-  console.log('mongodb connected',err);
-})
-
-var server = http.listen(3000, () => {
-  console.log('server is running on port', server.address().port);
-});
+    function sendMessage(message){
+      $.post("https://beta.intellecttech1.repl.co/api/messages", message)
+    }
+</script>
+</body>
+</html>
